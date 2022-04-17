@@ -89,8 +89,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if (sw_locationsupdates.isChecked()) {
+                    btn_map.setEnabled(true);
                     startLocationUpdate();
                 } else {
+                    btn_map.setEnabled(false);
                     stopLocationUpdate();
                 }
             }
