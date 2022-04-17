@@ -6,7 +6,10 @@ import androidx.core.app.ActivityCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 
 import com.google.android.gms.location.LocationCallback;
@@ -15,6 +18,7 @@ import com.google.android.gms.location.LocationRequest;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -23,6 +27,8 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
+
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -35,14 +41,17 @@ public class MainActivity extends AppCompatActivity {
     TextView tv_lat, tv_lon, tv_altitude, tv_accuracy, tv_speed, tv_updates, tv_address;
     @SuppressLint("UseSwitchCompatOrMaterialCode")
     Switch sw_locationsupdates;
+    Button btn_map;
 
     LocationRequest locationRequest;
+    Location lastLocation;
 
     // API Client
     FusedLocationProviderClient fusedLocationProviderClient;
 
     // Callback that is called whenever location is requested/removed.
     LocationCallback locationCallBack;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
         tv_updates = findViewById(R.id.tv_updates);
         tv_address = findViewById(R.id.tv_address);
         sw_locationsupdates = findViewById(R.id.sw_locationsupdates);
+        btn_map = findViewById(R.id.btn_map);
 
         //Setting location request to update every 10 sec and be very accurate
         locationRequest = new com.google.android.gms.location.LocationRequest();
@@ -69,7 +79,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
-                updateUI(locationResult.getLastLocation());
+                lastLocation = locationResult.getLastLocation();
+                updateUI(lastLocation);
             }
         };
 
@@ -84,6 +95,15 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+       btn_map.setOnClickListener(new View.OnClickListener() {
+           @Override
+           public void onClick(View v) {
+               MapsActivity.setCurrentLocation(lastLocation);
+               Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+               startActivity(intent);
+           }
+       });
 
         //Update GPS on start of the app
         updateGPS();
@@ -135,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
                 @Override
                 public void onSuccess(Location location) {
+                    lastLocation = location;
                     updateUI(location);
                 }
             });
@@ -164,6 +185,16 @@ public class MainActivity extends AppCompatActivity {
         }
         else{
             tv_speed.setText("Not avaliable on your phone.");
+        }
+
+        Geocoder geocoder = new Geocoder(MainActivity.this);
+
+        try{
+            List<Address> addressList = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+            tv_address.setText(addressList.get(0).getAddressLine(0));
+        }
+        catch (Exception e){
+            tv_address.setText("Exception was thrown while getting address.");
         }
     }
 }
